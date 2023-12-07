@@ -14,8 +14,7 @@ public class Main {
     static Queue<Car> queue = new LinkedList<>();
     static Queue<Car> queueCars;
     static int limit = 10;
-
-
+    
     public static void main(String[] args) throws InterruptedException, CustomException {
         customReader.parseFile("files/file.csv");
         Main object = new Main();
@@ -51,14 +50,16 @@ public class Main {
     public void ferryLoaded() throws InterruptedException {
         while (queueCars.size() != 0) {
             synchronized (this) {
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < limit; i++) {
                     Thread.sleep(200);
                     queue.offer(queueCars.poll());
                     System.out.println(i + " load");
                     if (queue.size() == limit || queueCars.isEmpty()) {
                         System.out.println("ferry is leaving");
-                        Thread.sleep(1000);
-                        this.wait();
+                        wait();
+                        if (queueCars.size() == 0) {
+                            break;
+                        }
                     }
                 }
             }
@@ -68,17 +69,17 @@ public class Main {
     public void ferryLeaving() throws InterruptedException {
         while (true) {
             synchronized (this) {
+                notify();
                 if (queue.size() == limit || queueCars.size() == 0) {
                     Thread.sleep(200);
                     while (!queue.isEmpty()) {
                         System.out.println(queue.poll() + " unloaded");
                     }
-                    this.notify();
                     System.out.println("the ferry is empty");
+                    if (queueCars.size() == 0) {
+                        break;
+                    }
                 }
-            }
-            if (queueCars.size() == 0) {
-                break;
             }
         }
     }
