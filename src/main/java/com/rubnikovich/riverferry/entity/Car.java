@@ -10,6 +10,8 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class Car implements Runnable {
+    private static final String LOCK = "Car lock";
+    private static final String UNLOCK = "Car unlock";
     private int id;
     private int weight;
     private int area;
@@ -23,51 +25,6 @@ public class Car implements Runnable {
         this.weight = weight;
         this.area = area;
         this.carState = new CarQueue();
-    }
-
-    private void load() throws InterruptedException {
-        while (Cars.carsQueue.size() != 0) {
-            CustomLock.lock.lock();
-            System.out.println("Car lock");
-            try {
-                loadCar();
-            } finally {
-                System.out.println("Car unlock");
-                CustomLock.lock.unlock();
-                TimeUnit.MILLISECONDS.sleep(200);
-            }
-        }
-    }
-
-    private void loadCar() throws InterruptedException {
-        for (int i = 0; i < Ferry.LIMIT; i++) {
-            if (Cars.carsQueue.size() == 0) {
-                continue;
-            }
-            Ferry.carsOnFerry.push(Cars.carsQueue.poll());
-            Ferry.carsOnFerry.peek().changeState();
-            System.out.println(Ferry.carsOnFerry.peek());
-            Ferry.countCars++;
-        }
-    }
-
-    @Override
-    public void run() {
-        try {
-            load();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void changeState() {
-        if (Ferry.carsOnFerry.contains(this)) {
-            carState = new CarOnFerry();
-        } else if (Cars.carsUnloaded.contains(this)) {
-            carState = new CarUnloaded();
-        } else if (Cars.carsQueue.contains(this)) {
-            carState = new CarQueue();
-        }
     }
 
     public int getCarId() {
@@ -94,13 +51,56 @@ public class Car implements Runnable {
         this.area = area;
     }
 
-
-    public void setCarState(CarState carState) {
-        this.carState = carState;
+    public void changeState() {
+        if (Ferry.getInstance().getCarsOnFerry().contains(this)) {
+            carState = new CarOnFerry();
+        } else if (Cars.carsUnloaded.contains(this)) {
+            carState = new CarUnloaded();
+        } else if (Cars.carsQueue.contains(this)) {
+            carState = new CarQueue();
+        }
     }
 
-    public String getCarState() {
-        return carState.getState();
+    @Override
+    public void run() {
+        try {
+            while (Cars.carsQueue.size() != 0) {
+                CustomLock.lock.lock();
+                Ferry.logger.info(LOCK);
+                try {
+                    loadCar();
+                } finally {
+                    Ferry.logger.info(UNLOCK);
+                    CustomLock.lock.unlock();
+                    TimeUnit.MILLISECONDS.sleep(100);
+                }
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void loadCar() {
+        Ferry ferry = Ferry.getInstance();
+        for (int i = 0; i < Ferry.LIMIT_COUNT; i++) {
+            if(isInvalid()){
+                continue;
+            }
+            ferry.getCarsOnFerry().push(Cars.carsQueue.poll());
+            ferry.getCarsOnFerry().peek().changeState();
+            Ferry.logger.info(ferry.getCarsOnFerry().peek());
+            int countCarOnFerry = ferry.getCountCarsOnFerry();
+            ferry.setCountCarsOnFerry(++countCarOnFerry);
+            ferry.setSpaceOnFerry(ferry.getSpaceOnFerry() + ferry.getCarsOnFerry().peek().getArea());
+            ferry.setWeightLoaded(ferry.getWeightLoaded() + ferry.getCarsOnFerry().peek().getWeight());
+        }
+    }
+
+    private boolean isInvalid(){
+        Ferry ferry = Ferry.getInstance();
+        return Cars.carsQueue.isEmpty() ||
+                (ferry.getSpaceOnFerry() + Cars.carsQueue.peek().getArea()) > Ferry.LIMIT_AREA ||
+                (ferry.getWeightLoaded() + Cars.carsQueue.peek().getWeight()) > Ferry.LIMIT_WEIGHT;
     }
 
     @Override

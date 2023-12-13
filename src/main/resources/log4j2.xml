@@ -3,15 +3,15 @@
     <Properties>
         <property name="LOG_DIR">logs</property>
         <property name="ARCHIVE_LOG_DIR">${LOG_DIR}/archive</property>
-        <property name="pattern_file">%d{HH:mm:ss.SSS} [%t] %-5level %logger{5} - %msg%n</property>
+        <property name="pattern_file"> %msg%n</property>
     </Properties>
 
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%r %-5level %logger{1} - %msg%n"/>
+            <PatternLayout pattern="%msg%n"/>
         </Console>
 
-        <RollingFile name="FileRolling" filename="${LOG_DIR}/text_log.log" append="true"
+        <RollingFile name="FileRolling" filename="${LOG_DIR}/log.log" append="true"
                      filePattern="${LOG_DIR}/${date:yyyy-MM-dd}/%d{yyyy-MM-dd_HH-mm}_%i.log">
             <PatternLayout pattern="${pattern_file}"/>
             <Policies>
@@ -30,7 +30,6 @@
             <AppenderRef ref="FileRolling"/>
         </Logger>
 
-        <!-- Root Logger -->
         <Root level="all">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="FileRolling"/>

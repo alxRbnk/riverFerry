@@ -7,27 +7,22 @@ import com.rubnikovich.riverferry.exception.CustomException;
 import com.rubnikovich.riverferry.parser.CustomParser;
 import com.rubnikovich.riverferry.parser.impl.CustomParserImpl;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class Main {
-    public static void main(String[] args) throws InterruptedException, CustomException {
+    public static void main(String[] args) throws InterruptedException, CustomException, ExecutionException {
         CustomParser customParser = new CustomParserImpl();
         Cars.carsQueue = customParser.parseFile("files/file.csv");
-        System.out.println(Cars.carsQueue);
+        Ferry.logger.info(Cars.carsQueue);
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
-        executorService.submit(Ferry.getInstance());
+        Future<Integer> future = executorService.submit(Ferry.getInstance());
         executorService.submit(new Car());
-
         executorService.shutdown();
-
+        Integer result = future.get();
         executorService.awaitTermination(10, TimeUnit.SECONDS);
 
-        System.out.println("----" + Cars.carsQueue);
-        System.out.println("----" + Ferry.carsOnFerry);
-        System.out.println("----" + Cars.carsUnloaded);
+        Ferry.logger.info("Loaded cars - " + result);
 
     }
 }

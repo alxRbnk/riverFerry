@@ -1,15 +1,28 @@
 package com.rubnikovich.riverferry.entity;
 
+import com.rubnikovich.riverferry.exception.CustomException;
 import com.rubnikovich.riverferry.util.CustomLock;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Stack;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-public class Ferry implements Runnable {
-    public static final int LIMIT = 5;
-    public static int countCars = 0;
-    public static Stack<Car> carsOnFerry = new Stack<>();
-    private int countCarsNeed = Cars.carsQueue.size();
+public class Ferry implements Callable<Integer> {
+    public static final Logger logger = LogManager.getLogger();
+    public static final int LIMIT_COUNT = 5;
+    public static final int LIMIT_AREA = 50;
+    public static final int LIMIT_WEIGHT = 12_000;
+    private static final String LOCK = "Ferry lock";
+    private static final String UNLOCK = "Ferry unlock";
+    private Stack<Car> carsOnFerry = new Stack<>();
+    private int totalCars = Cars.carsQueue.size();
+    private int spaceOnFerry;
+    private int countCarsOnFerry;
+    private int weightLoaded;
+    private int loadedCarsOnFerry;
+
 
     private static class CustomSingleton {
         private static final Ferry instance = new Ferry();
@@ -22,43 +35,77 @@ public class Ferry implements Runnable {
         return CustomSingleton.instance;
     }
 
-    private void unload() throws InterruptedException {
-        TimeUnit.MILLISECONDS.sleep(50);
-        while (Cars.carsUnloaded.size() != countCarsNeed) {
-            CustomLock.lock.lock();
-            System.out.println("Ferry lock");
-            System.out.println("count car on ferry " + Ferry.carsOnFerry.size());
-            try {
-                unloadFerry();
-            } finally {
-                CustomLock.lock.unlock();
-                System.out.println("Ferry unlock");
-                TimeUnit.MILLISECONDS.sleep(200);
-            }
-        }
+    public Stack<Car> getCarsOnFerry() {
+        return carsOnFerry;
     }
 
-    private void unloadFerry() throws InterruptedException {
-        for (int i = 0; i < countCars; i++) {
+    public int getCountCarsOnFerry() {
+        return countCarsOnFerry;
+    }
+
+    public void setCountCarsOnFerry(int countCarsOnFerry) {
+        this.countCarsOnFerry = countCarsOnFerry;
+    }
+
+    public int getSpaceOnFerry(){
+        return spaceOnFerry;
+    }
+
+    public void setSpaceOnFerry(int spaceOnFerry){
+        this.spaceOnFerry = spaceOnFerry;
+    }
+
+    public int getWeightLoaded(){
+        return weightLoaded;
+    }
+
+    public void setWeightLoaded(int weightLoaded){
+        this.weightLoaded = weightLoaded;
+    }
+
+    @Override
+    public Integer call() throws CustomException {
+        try {
+            TimeUnit.MILLISECONDS.sleep(50);
+            while (Cars.carsUnloaded.size() != totalCars) {
+                try {
+                    CustomLock.lock.lock();
+                    logger.info(LOCK);
+                    logger.info(this);
+                    unloadFerry();
+                } finally {
+                    CustomLock.lock.unlock();
+                    logger.info(UNLOCK);
+                    TimeUnit.MILLISECONDS.sleep(100);
+                }
+            }
+        } catch (InterruptedException e) {
+            throw new CustomException(e);
+        }
+        return loadedCarsOnFerry;
+    }
+
+    private void unloadFerry() {
+        for (int i = 0; i < countCarsOnFerry; i++) {
             if (carsOnFerry.size() == 0) {
                 continue;
             }
             Cars.carsUnloaded.push(carsOnFerry.pop());
             Cars.carsUnloaded.peek().changeState();
-            System.out.println(Cars.carsUnloaded.peek());
+            logger.info(Cars.carsUnloaded.peek());
+            loadedCarsOnFerry++;
+            spaceOnFerry = 0;
+            weightLoaded = 0;
         }
     }
 
     @Override
-    public void run() {
-        try {
-            unload();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static int getCountCars() {
-        return carsOnFerry.size();
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Ferry{");
+        sb.append("spaceOnFerry=").append(spaceOnFerry);
+        sb.append(", countCarsOnFerry=").append(countCarsOnFerry);
+        sb.append(", weightLoaded=").append(weightLoaded);
+        sb.append('}');
+        return sb.toString();
     }
 }
