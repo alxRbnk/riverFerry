@@ -1,40 +1,44 @@
 package com.rubnikovich.riverferry.entity;
 
-import com.rubnikovich.riverferry.lock.CustomLock;
-import com.rubnikovich.riverferry.state.StateFerry;
+import com.rubnikovich.riverferry.util.CustomLock;
 
 import java.util.Stack;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.TimeUnit;
 
-public class Ferry extends Thread {
+public class Ferry implements Runnable {
     public static final int LIMIT = 5;
     public static int countCars = 0;
     public static Stack<Car> carsOnFerry = new Stack<>();
-    public static Lock lock = new ReentrantLock();
-    private StateFerry stateFerry;
+    private int countCarsNeed = Cars.carsQueue.size();
 
-    public Ferry() {
+    private static class CustomSingleton {
+        private static final Ferry instance = new Ferry();
     }
 
-    public void unload() throws InterruptedException {
-        Thread.sleep(50);
-        while (Cars.carsQueue.size() != 0) {
+    private Ferry() {
+    }
+
+    public static Ferry getInstance() {
+        return CustomSingleton.instance;
+    }
+
+    private void unload() throws InterruptedException {
+        TimeUnit.MILLISECONDS.sleep(50);
+        while (Cars.carsUnloaded.size() != countCarsNeed) {
             CustomLock.lock.lock();
-            Thread.sleep(1000);
             System.out.println("Ferry lock");
+            System.out.println("count car on ferry " + Ferry.carsOnFerry.size());
             try {
                 unloadFerry();
             } finally {
-                Thread.sleep(2000);
                 CustomLock.lock.unlock();
                 System.out.println("Ferry unlock");
+                TimeUnit.MILLISECONDS.sleep(200);
             }
         }
     }
 
-
-    public void unloadFerry() throws InterruptedException {
+    private void unloadFerry() throws InterruptedException {
         for (int i = 0; i < countCars; i++) {
             if (carsOnFerry.size() == 0) {
                 continue;
@@ -42,10 +46,8 @@ public class Ferry extends Thread {
             Cars.carsUnloaded.push(carsOnFerry.pop());
             Cars.carsUnloaded.peek().changeState();
             System.out.println(Cars.carsUnloaded.peek());
-            Thread.sleep(500);
         }
     }
-
 
     @Override
     public void run() {
@@ -55,7 +57,6 @@ public class Ferry extends Thread {
             throw new RuntimeException(e);
         }
     }
-
 
     public static int getCountCars() {
         return carsOnFerry.size();

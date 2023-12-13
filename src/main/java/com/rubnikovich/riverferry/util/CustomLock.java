@@ -1,4 +1,4 @@
-package com.rubnikovich.riverferry.lock;
+package com.rubnikovich.riverferry.util;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;

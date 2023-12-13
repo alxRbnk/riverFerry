@@ -1,18 +1,19 @@
 package com.rubnikovich.riverferry.entity;
 
-import com.rubnikovich.riverferry.lock.CustomLock;
-import com.rubnikovich.riverferry.state.StateCar;
-import com.rubnikovich.riverferry.state.carimpl.CarQueue;
-import com.rubnikovich.riverferry.state.carimpl.CarOnFerry;
-import com.rubnikovich.riverferry.state.carimpl.CarUnloaded;
+import com.rubnikovich.riverferry.util.CustomLock;
+import com.rubnikovich.riverferry.state.CarState;
+import com.rubnikovich.riverferry.state.impl.CarQueue;
+import com.rubnikovich.riverferry.state.impl.CarOnFerry;
+import com.rubnikovich.riverferry.state.impl.CarUnloaded;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
-public class Car extends Thread {
+public class Car implements Runnable {
     private int id;
     private int weight;
     private int area;
-    private StateCar stateCar;
+    private CarState carState;
 
     public Car() {
     }
@@ -21,25 +22,24 @@ public class Car extends Thread {
         this.id = id;
         this.weight = weight;
         this.area = area;
-        this.stateCar = new CarQueue();
+        this.carState = new CarQueue();
     }
 
-    public void load() throws InterruptedException {
+    private void load() throws InterruptedException {
         while (Cars.carsQueue.size() != 0) {
             CustomLock.lock.lock();
             System.out.println("Car lock");
             try {
                 loadCar();
             } finally {
-                System.out.println("countCarFerry " + Ferry.carsOnFerry.size() );
                 System.out.println("Car unlock");
                 CustomLock.lock.unlock();
-                Thread.sleep(500);
+                TimeUnit.MILLISECONDS.sleep(200);
             }
         }
     }
 
-    public void loadCar() throws InterruptedException {
+    private void loadCar() throws InterruptedException {
         for (int i = 0; i < Ferry.LIMIT; i++) {
             if (Cars.carsQueue.size() == 0) {
                 continue;
@@ -48,7 +48,6 @@ public class Car extends Thread {
             Ferry.carsOnFerry.peek().changeState();
             System.out.println(Ferry.carsOnFerry.peek());
             Ferry.countCars++;
-            Thread.sleep(1000);
         }
     }
 
@@ -63,11 +62,11 @@ public class Car extends Thread {
 
     public void changeState() {
         if (Ferry.carsOnFerry.contains(this)) {
-            stateCar = new CarOnFerry();
+            carState = new CarOnFerry();
         } else if (Cars.carsUnloaded.contains(this)) {
-            stateCar = new CarUnloaded();
+            carState = new CarUnloaded();
         } else if (Cars.carsQueue.contains(this)) {
-            stateCar = new CarQueue();
+            carState = new CarQueue();
         }
     }
 
@@ -95,12 +94,13 @@ public class Car extends Thread {
         this.area = area;
     }
 
-    public StateCar getStateCar() {
-        return stateCar;
+
+    public void setCarState(CarState carState) {
+        this.carState = carState;
     }
 
-    public void setStateCar(StateCar stateCar) {
-        this.stateCar = stateCar;
+    public String getCarState() {
+        return carState.getState();
     }
 
     @Override
@@ -113,7 +113,7 @@ public class Car extends Thread {
         if (id != car.id) return false;
         if (weight != car.weight) return false;
         if (area != car.area) return false;
-        return Objects.equals(stateCar, car.stateCar);
+        return Objects.equals(carState, car.carState);
     }
 
     @Override
@@ -130,7 +130,7 @@ public class Car extends Thread {
         sb.append("").append(id);
         sb.append(",").append(weight);
         sb.append(",").append(area);
-        sb.append(",").append(stateCar);
+        sb.append(",").append(this.carState.getState());
         sb.append('}');
         return sb.toString();
     }
