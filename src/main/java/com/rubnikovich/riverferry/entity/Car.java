@@ -1,23 +1,26 @@
 package com.rubnikovich.riverferry.entity;
 
-import com.rubnikovich.riverferry.util.CustomLock;
 import com.rubnikovich.riverferry.state.CarState;
-import com.rubnikovich.riverferry.state.impl.CarQueue;
 import com.rubnikovich.riverferry.state.impl.CarOnFerry;
+import com.rubnikovich.riverferry.state.impl.CarQueue;
 import com.rubnikovich.riverferry.state.impl.CarUnloaded;
+import com.rubnikovich.riverferry.util.CustomLock;
 
 import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 public class Car implements Runnable {
     private static final String LOCK = "Car lock";
     private static final String UNLOCK = "Car unlock";
+    private static Queue<Car> carsQueue;
     private int id;
     private int weight;
     private int area;
     private CarState carState;
 
-    public Car() {
+    public Car(Queue<Car> carsQueue) {
+        this.carsQueue = carsQueue;
     }
 
     public Car(int weight, int area, int id) {
@@ -51,12 +54,17 @@ public class Car implements Runnable {
         this.area = area;
     }
 
+    public static Queue<Car> getCarsQueue() {
+        return carsQueue;
+    }
+
     public void changeState() {
-        if (Ferry.getInstance().getCarsOnFerry().contains(this)) {
+        Ferry ferry = Ferry.getInstance();
+        if (ferry.getCarsOnFerry().contains(this)) {
             carState = new CarOnFerry();
-        } else if (Cars.carsUnloaded.contains(this)) {
+        } else if (ferry.getCarsUnloaded().contains(this)) {
             carState = new CarUnloaded();
-        } else if (Cars.carsQueue.contains(this)) {
+        } else if (carsQueue.contains(this)) {
             carState = new CarQueue();
         }
     }
@@ -64,7 +72,7 @@ public class Car implements Runnable {
     @Override
     public void run() {
         try {
-            while (Cars.carsQueue.size() != 0) {
+            while (!carsQueue.isEmpty()) {
                 CustomLock.lock.lock();
                 Ferry.logger.info(LOCK);
                 try {
@@ -83,10 +91,10 @@ public class Car implements Runnable {
     private void loadCar() {
         Ferry ferry = Ferry.getInstance();
         for (int i = 0; i < Ferry.LIMIT_COUNT; i++) {
-            if(isInvalid()){
+            if (isInvalid()) {
                 continue;
             }
-            ferry.getCarsOnFerry().push(Cars.carsQueue.poll());
+            ferry.getCarsOnFerry().push(carsQueue.poll());
             ferry.getCarsOnFerry().peek().changeState();
             Ferry.logger.info(ferry.getCarsOnFerry().peek());
             int countCarOnFerry = ferry.getCountCarsOnFerry();
@@ -96,11 +104,11 @@ public class Car implements Runnable {
         }
     }
 
-    private boolean isInvalid(){
+    private boolean isInvalid() {
         Ferry ferry = Ferry.getInstance();
-        return Cars.carsQueue.isEmpty() ||
-                (ferry.getSpaceOnFerry() + Cars.carsQueue.peek().getArea()) > Ferry.LIMIT_AREA ||
-                (ferry.getWeightLoaded() + Cars.carsQueue.peek().getWeight()) > Ferry.LIMIT_WEIGHT;
+        return carsQueue.isEmpty() ||
+                (ferry.getSpaceOnFerry() + carsQueue.peek().getArea()) > Ferry.LIMIT_AREA ||
+                (ferry.getWeightLoaded() + carsQueue.peek().getWeight()) > Ferry.LIMIT_WEIGHT;
     }
 
     @Override

@@ -16,13 +16,13 @@ public class Ferry implements Callable<Integer> {
     public static final int LIMIT_WEIGHT = 12_000;
     private static final String LOCK = "Ferry lock";
     private static final String UNLOCK = "Ferry unlock";
+    private static final int TOTAL_CARS = Car.getCarsQueue().size();
     private Stack<Car> carsOnFerry = new Stack<>();
-    private int totalCars = Cars.carsQueue.size();
+    private Stack<Car> carsUnloaded = new Stack<>();
     private int spaceOnFerry;
     private int countCarsOnFerry;
     private int weightLoaded;
     private int loadedCarsOnFerry;
-
 
     private static class CustomSingleton {
         private static final Ferry instance = new Ferry();
@@ -47,27 +47,31 @@ public class Ferry implements Callable<Integer> {
         this.countCarsOnFerry = countCarsOnFerry;
     }
 
-    public int getSpaceOnFerry(){
+    public int getSpaceOnFerry() {
         return spaceOnFerry;
     }
 
-    public void setSpaceOnFerry(int spaceOnFerry){
+    public void setSpaceOnFerry(int spaceOnFerry) {
         this.spaceOnFerry = spaceOnFerry;
     }
 
-    public int getWeightLoaded(){
+    public int getWeightLoaded() {
         return weightLoaded;
     }
 
-    public void setWeightLoaded(int weightLoaded){
+    public void setWeightLoaded(int weightLoaded) {
         this.weightLoaded = weightLoaded;
+    }
+
+    public Stack<Car> getCarsUnloaded() {
+        return carsUnloaded;
     }
 
     @Override
     public Integer call() throws CustomException {
         try {
             TimeUnit.MILLISECONDS.sleep(50);
-            while (Cars.carsUnloaded.size() != totalCars) {
+            while (carsUnloaded.size() != TOTAL_CARS) {
                 try {
                     CustomLock.lock.lock();
                     logger.info(LOCK);
@@ -87,12 +91,12 @@ public class Ferry implements Callable<Integer> {
 
     private void unloadFerry() {
         for (int i = 0; i < countCarsOnFerry; i++) {
-            if (carsOnFerry.size() == 0) {
+            if (carsOnFerry.isEmpty()) {
                 continue;
             }
-            Cars.carsUnloaded.push(carsOnFerry.pop());
-            Cars.carsUnloaded.peek().changeState();
-            logger.info(Cars.carsUnloaded.peek());
+            carsUnloaded.push(carsOnFerry.pop());
+            carsUnloaded.peek().changeState();
+            logger.info(carsUnloaded.peek());
             loadedCarsOnFerry++;
             spaceOnFerry = 0;
             weightLoaded = 0;
