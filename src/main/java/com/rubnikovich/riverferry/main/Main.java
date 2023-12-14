@@ -14,7 +14,7 @@ public class Main {
         Car car = new Car(customParser.parseFile("files/file.csv"));
         Ferry.logger.info(Car.getCarsQueue());
 
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        ExecutorService executorService = Executors.newCachedThreadPool();
         Future<Integer> future = executorService.submit(Ferry.getInstance());
         executorService.submit(car);
         executorService.shutdown();
