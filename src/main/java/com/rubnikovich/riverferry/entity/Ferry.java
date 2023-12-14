@@ -14,9 +14,9 @@ public class Ferry implements Callable<Integer> {
     public static final int LIMIT_COUNT = 5;
     public static final int LIMIT_AREA = 50;
     public static final int LIMIT_WEIGHT = 12_000;
+    private static final int TOTAL_CARS = Car.getCarsQueue().size();
     private static final String LOCK = "Ferry lock";
     private static final String UNLOCK = "Ferry unlock";
-    private static final int TOTAL_CARS = Car.getCarsQueue().size();
     private Stack<Car> carsOnFerry = new Stack<>();
     private Stack<Car> carsUnloaded = new Stack<>();
     private int spaceOnFerry;
@@ -24,7 +24,7 @@ public class Ferry implements Callable<Integer> {
     private int weightLoaded;
     private int loadedCarsOnFerry;
 
-    private static class CustomSingleton {
+    private static class InstanceFerry {
         private static final Ferry instance = new Ferry();
     }
 
@@ -32,7 +32,7 @@ public class Ferry implements Callable<Integer> {
     }
 
     public static Ferry getInstance() {
-        return CustomSingleton.instance;
+        return InstanceFerry.instance;
     }
 
     public Stack<Car> getCarsOnFerry() {
@@ -90,17 +90,18 @@ public class Ferry implements Callable<Integer> {
     }
 
     private void unloadFerry() {
-        for (int i = 0; i < countCarsOnFerry; i++) {
+        for (int i = 0; i < LIMIT_COUNT; i++) {
             if (carsOnFerry.isEmpty()) {
                 continue;
             }
             carsUnloaded.push(carsOnFerry.pop());
             carsUnloaded.peek().changeState();
             logger.info(carsUnloaded.peek());
+            countCarsOnFerry--;
             loadedCarsOnFerry++;
-            spaceOnFerry = 0;
-            weightLoaded = 0;
         }
+        spaceOnFerry = 0;
+        weightLoaded = 0;
     }
 
     @Override

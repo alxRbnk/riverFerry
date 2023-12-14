@@ -1,0 +1,48 @@
+[{100001,2750,10,Queue}, {100002,1500,8,Queue}, {100003,4250,14,Queue}, {100004,4100,14,Queue}, {100005,3150,12,Queue}, {100006,1400,8,Queue}, {100007,1250,8,Queue}, {100008,2100,10,Queue}, {100009,2500,11,Queue}, {100010,1150,8,Queue}, {100011,1800,7,Queue}, {100012,2850,11,Queue}, {100013,5000,22,Queue}]
+Car lock
+{100001,2750,10,On ferry}
+{100002,1500,8,On ferry}
+{100003,4250,14,On ferry}
+Car unlock
+Ferry lock
+Ferry{spaceOnFerry=32, countCarsOnFerry=3, weightLoaded=8500}
+{100003,4250,14,Unloaded}
+{100002,1500,8,Unloaded}
+{100001,2750,10,Unloaded}
+Ferry unlock
+Car lock
+{100004,4100,14,On ferry}
+{100005,3150,12,On ferry}
+{100006,1400,8,On ferry}
+{100007,1250,8,On ferry}
+Car unlock
+Ferry lock
+Ferry{spaceOnFerry=42, countCarsOnFerry=4, weightLoaded=9900}
+{100007,1250,8,Unloaded}
+{100006,1400,8,Unloaded}
+{100005,3150,12,Unloaded}
+{100004,4100,14,Unloaded}
+Ferry unlock
+Car lock
+{100008,2100,10,On ferry}
+{100009,2500,11,On ferry}
+{100010,1150,8,On ferry}
+{100011,1800,7,On ferry}
+{100012,2850,11,On ferry}
+Car unlock
+Ferry lock
+Ferry{spaceOnFerry=47, countCarsOnFerry=5, weightLoaded=10400}
+{100012,2850,11,Unloaded}
+{100011,1800,7,Unloaded}
+{100010,1150,8,Unloaded}
+{100009,2500,11,Unloaded}
+{100008,2100,10,Unloaded}
+Ferry unlock
+Car lock
+{100013,5000,22,On ferry}
+Car unlock
+Ferry lock
+Ferry{spaceOnFerry=22, countCarsOnFerry=1, weightLoaded=5000}
+{100013,5000,22,Unloaded}
+Ferry unlock
+13

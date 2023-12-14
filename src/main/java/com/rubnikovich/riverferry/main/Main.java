@@ -9,7 +9,7 @@ import com.rubnikovich.riverferry.parser.impl.CustomParserImpl;
 import java.util.concurrent.*;
 
 public class Main {
-    public static void main(String[] args) throws InterruptedException, CustomException, ExecutionException {
+    public static void main(String[] args) throws CustomException {
         CustomParser customParser = new CustomParserImpl();
         Car car = new Car(customParser.parseFile("files/file.csv"));
         Ferry.logger.info(Car.getCarsQueue());
@@ -18,7 +18,13 @@ public class Main {
         Future<Integer> future = executorService.submit(Ferry.getInstance());
         executorService.submit(car);
         executorService.shutdown();
-        Integer result = future.get();
+        Integer result = null;
+        try {
+            result = future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new CustomException(e);
+        }
+
         Ferry.logger.info(result);
     }
 }
