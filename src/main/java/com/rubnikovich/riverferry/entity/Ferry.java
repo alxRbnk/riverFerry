@@ -2,6 +2,7 @@ package com.rubnikovich.riverferry.entity;
 
 import com.rubnikovich.riverferry.exception.CustomException;
 import com.rubnikovich.riverferry.util.CustomLock;
+import com.rubnikovich.riverferry.util.InfoFerry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -9,7 +10,7 @@ import java.util.Stack;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-public class Ferry implements Callable<Integer> {
+public class Ferry implements Callable<InfoFerry> {
     public static final Logger logger = LogManager.getLogger();
     public static final int LIMIT_COUNT = 5;
     public static final int LIMIT_AREA = 50;
@@ -23,6 +24,7 @@ public class Ferry implements Callable<Integer> {
     private int countCarsOnFerry;
     private int weightLoaded;
     private int loadedCarsOnFerry;
+    private int countTrips;
 
     private static class InstanceFerry {
         private static final Ferry instance = new Ferry();
@@ -68,7 +70,7 @@ public class Ferry implements Callable<Integer> {
     }
 
     @Override
-    public Integer call() throws CustomException {
+    public InfoFerry call() throws CustomException {
         try {
             TimeUnit.MILLISECONDS.sleep(50);
             while (carsUnloaded.size() != TOTAL_CARS) {
@@ -86,7 +88,7 @@ public class Ferry implements Callable<Integer> {
         } catch (InterruptedException e) {
             throw new CustomException(e);
         }
-        return loadedCarsOnFerry;
+        return new InfoFerry(loadedCarsOnFerry, countTrips);
     }
 
     private void unloadFerry() {
@@ -102,6 +104,7 @@ public class Ferry implements Callable<Integer> {
         }
         spaceOnFerry = 0;
         weightLoaded = 0;
+        countTrips++;
     }
 
     @Override

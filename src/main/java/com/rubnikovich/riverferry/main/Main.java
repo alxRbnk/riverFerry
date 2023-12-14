@@ -5,6 +5,7 @@ import com.rubnikovich.riverferry.entity.Ferry;
 import com.rubnikovich.riverferry.exception.CustomException;
 import com.rubnikovich.riverferry.parser.CustomParser;
 import com.rubnikovich.riverferry.parser.impl.CustomParserImpl;
+import com.rubnikovich.riverferry.util.InfoFerry;
 
 import java.util.concurrent.*;
 
@@ -15,16 +16,15 @@ public class Main {
         Ferry.logger.info(Car.getCarsQueue());
 
         ExecutorService executorService = Executors.newCachedThreadPool();
-        Future<Integer> future = executorService.submit(Ferry.getInstance());
+        Future<InfoFerry> future = executorService.submit(Ferry.getInstance());
         executorService.submit(car);
         executorService.shutdown();
-        Integer result = null;
+        InfoFerry info = null;
         try {
-            result = future.get();
+            info = future.get();
         } catch (InterruptedException | ExecutionException e) {
             throw new CustomException(e);
         }
-
-        Ferry.logger.info(result);
+        Ferry.logger.info(info);
     }
 }

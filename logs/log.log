@@ -45,4 +45,4 @@ Ferry lock
 Ferry{spaceOnFerry=22, countCarsOnFerry=1, weightLoaded=5000}
 {100013,5000,22,Unloaded}
 Ferry unlock
-13
+Info{countCar=13, countTrips=4}
