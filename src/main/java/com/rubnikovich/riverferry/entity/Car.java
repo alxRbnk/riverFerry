@@ -11,8 +11,6 @@ import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 public class Car implements Runnable {
-    private static final String LOCK = "Car lock";
-    private static final String UNLOCK = "Car unlock";
     private static Queue<Car> carsQueue;
     private int id;
     private int weight;
@@ -72,13 +70,14 @@ public class Car implements Runnable {
     @Override
     public void run() {
         try {
+            Thread.currentThread().setName("nameThread = carThread");
             while (!carsQueue.isEmpty()) {
                 CustomLock.lock.lock();
-                Ferry.logger.info(LOCK);
+                Ferry.logger.info("LOCK " + Thread.currentThread().getName());
                 try {
                     loadCar();
                 } finally {
-                    Ferry.logger.info(UNLOCK);
+                    Ferry.logger.info("UNLOCK");
                     CustomLock.lock.unlock();
                     TimeUnit.MILLISECONDS.sleep(100);
                 }

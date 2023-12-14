@@ -5,9 +5,11 @@ import com.rubnikovich.riverferry.entity.Ferry;
 import com.rubnikovich.riverferry.exception.CustomException;
 import com.rubnikovich.riverferry.parser.CustomParser;
 import com.rubnikovich.riverferry.parser.impl.CustomParserImpl;
-import com.rubnikovich.riverferry.util.InfoFerry;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class Main {
     public static void main(String[] args) throws CustomException {
@@ -16,10 +18,10 @@ public class Main {
         Ferry.logger.info(Car.getCarsQueue());
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
-        Future<InfoFerry> future = executorService.submit(Ferry.getInstance());
+        Future<Integer> future = executorService.submit(Ferry.getInstance());
         executorService.submit(car);
         executorService.shutdown();
-        InfoFerry info = null;
+        Integer info = null;
         try {
             info = future.get();
         } catch (InterruptedException | ExecutionException e) {

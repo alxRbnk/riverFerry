@@ -2,29 +2,25 @@ package com.rubnikovich.riverferry.entity;
 
 import com.rubnikovich.riverferry.exception.CustomException;
 import com.rubnikovich.riverferry.util.CustomLock;
-import com.rubnikovich.riverferry.util.InfoFerry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Stack;
+import java.util.ArrayDeque;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-public class Ferry implements Callable<InfoFerry> {
+public class Ferry implements Callable<Integer> {
     public static final Logger logger = LogManager.getLogger();
     public static final int LIMIT_COUNT = 5;
     public static final int LIMIT_AREA = 50;
     public static final int LIMIT_WEIGHT = 12_000;
     private static final int TOTAL_CARS = Car.getCarsQueue().size();
-    private static final String LOCK = "Ferry lock";
-    private static final String UNLOCK = "Ferry unlock";
-    private Stack<Car> carsOnFerry = new Stack<>();
-    private Stack<Car> carsUnloaded = new Stack<>();
+    private ArrayDeque<Car> carsOnFerry = new ArrayDeque<>();
+    private ArrayDeque<Car> carsUnloaded = new ArrayDeque<>();
     private int spaceOnFerry;
     private int countCarsOnFerry;
     private int weightLoaded;
     private int loadedCarsOnFerry;
-    private int countTrips;
 
     private static class InstanceFerry {
         private static final Ferry instance = new Ferry();
@@ -37,7 +33,7 @@ public class Ferry implements Callable<InfoFerry> {
         return InstanceFerry.instance;
     }
 
-    public Stack<Car> getCarsOnFerry() {
+    public ArrayDeque<Car> getCarsOnFerry() {
         return carsOnFerry;
     }
 
@@ -65,30 +61,31 @@ public class Ferry implements Callable<InfoFerry> {
         this.weightLoaded = weightLoaded;
     }
 
-    public Stack<Car> getCarsUnloaded() {
+    public ArrayDeque<Car> getCarsUnloaded() {
         return carsUnloaded;
     }
 
     @Override
-    public InfoFerry call() throws CustomException {
+    public Integer call() throws CustomException {
+        Thread.currentThread().setName("nameThread = ferryThread");
         try {
             TimeUnit.MILLISECONDS.sleep(50);
             while (carsUnloaded.size() != TOTAL_CARS) {
                 try {
                     CustomLock.lock.lock();
-                    logger.info(LOCK);
+                    logger.info("LOCK " + Thread.currentThread().getName());
                     logger.info(this);
                     unloadFerry();
                 } finally {
                     CustomLock.lock.unlock();
-                    logger.info(UNLOCK);
+                    logger.info("UNLOCK");
                     TimeUnit.MILLISECONDS.sleep(100);
                 }
             }
         } catch (InterruptedException e) {
             throw new CustomException(e);
         }
-        return new InfoFerry(loadedCarsOnFerry, countTrips);
+        return loadedCarsOnFerry;
     }
 
     private void unloadFerry() {
@@ -104,7 +101,6 @@ public class Ferry implements Callable<InfoFerry> {
         }
         spaceOnFerry = 0;
         weightLoaded = 0;
-        countTrips++;
     }
 
     @Override
