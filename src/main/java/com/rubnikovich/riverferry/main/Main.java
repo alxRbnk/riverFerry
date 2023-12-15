@@ -6,27 +6,25 @@ import com.rubnikovich.riverferry.exception.CustomException;
 import com.rubnikovich.riverferry.parser.CustomParser;
 import com.rubnikovich.riverferry.parser.impl.CustomParserImpl;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 public class Main {
-    public static void main(String[] args) throws CustomException {
+    public static void main(String[] args) throws CustomException, InterruptedException {
         CustomParser customParser = new CustomParserImpl();
         Car car = new Car(customParser.parseFile("files/file.csv"));
         Ferry.logger.info(Car.getCarsQueue());
 
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
-        Future<Integer> future = executorService.submit(Ferry.getInstance());
-        executorService.submit(car);
-        executorService.shutdown();
-        Integer info = null;
-        try {
-            info = future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new CustomException(e);
-        }
-        Ferry.logger.info(info);
+        ExecutorService executorServiceFerry = Executors.newSingleThreadExecutor();
+        ExecutorService executorServiceCars = Executors.newSingleThreadExecutor();
+        executorServiceFerry.execute(Ferry.getInstance());
+        executorServiceCars.execute(car);
+        executorServiceFerry.shutdown();
+        executorServiceCars.shutdown();
+
+        executorServiceFerry.awaitTermination(50, TimeUnit.SECONDS);
+        Ferry ferry = Ferry.getInstance();
+        System.out.println(ferry.getCarsOnFerry().size());
+        System.out.println(ferry.getCarsUnloaded().size());
+
     }
 }

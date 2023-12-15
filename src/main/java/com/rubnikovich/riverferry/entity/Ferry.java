@@ -1,15 +1,14 @@
 package com.rubnikovich.riverferry.entity;
 
-import com.rubnikovich.riverferry.exception.CustomException;
-import com.rubnikovich.riverferry.util.CustomLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayDeque;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class Ferry implements Callable<Integer> {
+public class Ferry implements Runnable {
     public static final Logger logger = LogManager.getLogger();
     public static final int LIMIT_COUNT = 5;
     public static final int LIMIT_AREA = 50;
@@ -20,7 +19,7 @@ public class Ferry implements Callable<Integer> {
     private int spaceOnFerry;
     private int countCarsOnFerry;
     private int weightLoaded;
-    private int loadedCarsOnFerry;
+    public static Lock lock = new ReentrantLock();
 
     private static class InstanceFerry {
         private static final Ferry instance = new Ferry();
@@ -66,41 +65,38 @@ public class Ferry implements Callable<Integer> {
     }
 
     @Override
-    public Integer call() throws CustomException {
-        Thread.currentThread().setName("nameThread = ferryThread");
+    public void run() {
         try {
-            TimeUnit.MILLISECONDS.sleep(50);
             while (carsUnloaded.size() != TOTAL_CARS) {
+                TimeUnit.MILLISECONDS.sleep(5);
                 try {
-                    CustomLock.lock.lock();
-                    logger.info("LOCK " + Thread.currentThread().getName());
+                    lock.lock();
                     logger.info(this);
                     unloadFerry();
                 } finally {
-                    CustomLock.lock.unlock();
-                    logger.info("UNLOCK");
-                    TimeUnit.MILLISECONDS.sleep(100);
+                    lock.unlock();
                 }
             }
         } catch (InterruptedException e) {
-            throw new CustomException(e);
+            throw new RuntimeException(e);
         }
-        return loadedCarsOnFerry;
     }
 
-    private void unloadFerry() {
+    private void unloadFerry() throws InterruptedException {
         for (int i = 0; i < LIMIT_COUNT; i++) {
             if (carsOnFerry.isEmpty()) {
                 continue;
             }
+            TimeUnit.MILLISECONDS.sleep(300);
             carsUnloaded.push(carsOnFerry.pop());
             carsUnloaded.peek().changeState();
             logger.info(carsUnloaded.peek());
             countCarsOnFerry--;
-            loadedCarsOnFerry++;
         }
         spaceOnFerry = 0;
         weightLoaded = 0;
+        logger.info("Empty ferry, return beach");
+        TimeUnit.SECONDS.sleep(1);
     }
 
     @Override
