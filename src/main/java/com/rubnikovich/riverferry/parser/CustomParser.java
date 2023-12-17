@@ -1,10 +1,10 @@
 package com.rubnikovich.riverferry.parser;
 
-import com.rubnikovich.riverferry.exception.CustomException;
 import com.rubnikovich.riverferry.entity.Car;
+import com.rubnikovich.riverferry.exception.CustomException;
 
-import java.util.Queue;
+import java.util.Deque;
 
 public interface CustomParser {
-    Queue<Car> parseFile(String path) throws CustomException;
+    Deque<Car> parseFile(String path) throws CustomException;
 }

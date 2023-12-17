@@ -1,10 +1,10 @@
-package com.rubnikovich.riverferry.parser.impl;
+package com.rubnikovich.riverferry2.parser.impl;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
-import com.rubnikovich.riverferry.entity.Car;
-import com.rubnikovich.riverferry.exception.CustomException;
-import com.rubnikovich.riverferry.parser.CustomParser;
+import com.rubnikovich.riverferry2.entity.Car;
+import com.rubnikovich.riverferry2.exception.CustomException;
+import com.rubnikovich.riverferry2.parser.CustomParser;
 
 import java.io.FileReader;
 import java.io.IOException;

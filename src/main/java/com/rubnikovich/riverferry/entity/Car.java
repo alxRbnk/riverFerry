@@ -1,39 +1,35 @@
 package com.rubnikovich.riverferry.entity;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.util.Objects;
-import java.util.Queue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Car implements Runnable {
-    public static final Logger logger = LogManager.getLogger();
-    private static Queue<Car> carsQueue;
+public class Car {
     private int id;
     private int weight;
     private int area;
     private CarState carState;
-    private Lock lock = new ReentrantLock();
 
     private enum CarState{
         QUEUE, ON_FERRY, UNLOADED
-    }
-
-    public Car(Queue<Car> carsQueue) {
-        this.carsQueue = carsQueue;
     }
 
     public Car(int weight, int area, int id) {
         this.id = id;
         this.weight = weight;
         this.area = area;
-        this.carState = CarState.QUEUE;
+        this.changeState();
     }
 
-    public int getCarId() {
+    public void changeState() {
+            switch (carState) {
+                case QUEUE -> this.setCarState(CarState.ON_FERRY);
+                case ON_FERRY -> this.setCarState(CarState.UNLOADED);
+                case null, default -> this.setCarState(CarState.QUEUE);
+            }
+        }
+
+    public int getId() {
         return id;
     }
 
@@ -57,56 +53,12 @@ public class Car implements Runnable {
         this.area = area;
     }
 
-    public static Queue<Car> getCarsQueue() {
-        return carsQueue;
+    public CarState getCarState() {
+        return carState;
     }
 
-    public void changeState() {
-            switch (carState) {
-                case QUEUE -> carState = CarState.ON_FERRY;
-                case ON_FERRY -> carState = CarState.UNLOADED;
-                default -> carState = CarState.QUEUE;
-            }
-        }
-
-    @Override
-    public void run() {
-        try {
-            while (!carsQueue.isEmpty()) {
-                Ferry.lock.lock();
-                try {
-                    loadCar();
-                } finally {
-                    Ferry.lock.unlock();
-                }
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void loadCar() throws InterruptedException {
-        Ferry ferry = Ferry.getInstance();
-        for (int i = 0; i < Ferry.LIMIT_COUNT; i++) {
-            if (isInvalid()) {
-                continue;
-            }
-            ferry.getCarsOnFerry().push(carsQueue.poll());
-            ferry.getCarsOnFerry().peek().changeState();
-            logger.info(ferry.getCarsOnFerry().peek());
-            int countCarOnFerry = ferry.getCountCarsOnFerry();
-            ferry.setCountCarsOnFerry(++countCarOnFerry);
-            ferry.setSpaceOnFerry(ferry.getSpaceOnFerry() + ferry.getCarsOnFerry().peek().getArea());
-            ferry.setWeightLoaded(ferry.getWeightLoaded() + ferry.getCarsOnFerry().peek().getWeight());
-            TimeUnit.MILLISECONDS.sleep(500);
-        }
-    }
-
-    private boolean isInvalid() {
-        Ferry ferry = Ferry.getInstance();
-        return carsQueue.isEmpty() ||
-                (ferry.getSpaceOnFerry() + carsQueue.peek().getArea()) > Ferry.LIMIT_AREA ||
-                (ferry.getWeightLoaded() + carsQueue.peek().getWeight()) > Ferry.LIMIT_WEIGHT;
+    public void setCarState(CarState carState) {
+        this.carState = carState;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.rubnikovich.riverferry.entity;
+package com.rubnikovich.riverferry2.entity;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,10 +14,11 @@ public class Ferry implements Runnable {
     public static final int LIMIT_COUNT = 5;
     public static final int LIMIT_AREA = 50;
     public static final int LIMIT_WEIGHT = 12_000;
-    private static final int TOTAL_CARS = Cars.getInstance().getCarsQueue().size();
     private static volatile Ferry instance;
     public static Lock lock = new ReentrantLock();
     private Deque<Car> carsOnFerry = new ArrayDeque<>();
+    private Deque<Car> carsQueue = new ArrayDeque<>();
+    private Deque<Car> carsLoaded = new ArrayDeque<>();
     private int spaceOnFerry;
     private int countCarsOnFerry;
     private int weightLoaded;
@@ -34,10 +35,6 @@ public class Ferry implements Runnable {
             }
         }
         return instance;
-    }
-
-    public Deque<Car> getCarsOnFerry() {
-        return carsOnFerry;
     }
 
     public int getCountCarsOnFerry() {
@@ -64,20 +61,32 @@ public class Ferry implements Runnable {
         this.weightLoaded = weightLoaded;
     }
 
-    public boolean isFull() {
-        Cars cars = Cars.getInstance();
-        return (spaceOnFerry + cars.getCarsQueue().peek().getArea()) > Ferry.LIMIT_AREA ||
-                (weightLoaded + cars.getCarsQueue().peek().getWeight()) > Ferry.LIMIT_WEIGHT;
+    public Deque<Car> getCarQueue() {
+        return carsQueue;
+    }
+
+    public Deque<Car> getCarOnFerry() {
+        return carsOnFerry;
+    }
+
+    public Deque<Car> getCarLoaded() {
+        return carsLoaded;
+    }
+
+    public boolean isFull(Car car) {
+        return (spaceOnFerry + car.getArea() > LIMIT_AREA) ||
+                (countCarsOnFerry + 1 > LIMIT_COUNT) ||
+                (weightLoaded + car.getWeight() > LIMIT_WEIGHT);
     }
 
     @Override
     public void run() {
         try {
-            while (Cars.getInstance().getCarsLoaded().size() != TOTAL_CARS) {
+            while (carsLoaded.size() != Car.getCounter()) {
                 lock.lock();
                 try {
                     unloadFerry();
-                    TimeUnit.MILLISECONDS.sleep(1000);
+                    TimeUnit.MILLISECONDS.sleep(500);
                 } finally {
                     lock.unlock();
                 }
@@ -97,9 +106,9 @@ public class Ferry implements Runnable {
             if (carsOnFerry.isEmpty()) {
                 continue;
             }
-            Cars.getInstance().getCarsLoaded().push(carsOnFerry.pop());
-            Cars.getInstance().getCarsLoaded().peek().changeState();
-            logger.info(Cars.getInstance().getCarsLoaded().peek());
+            carsLoaded.offerLast(carsOnFerry.pollLast());
+            carsLoaded.peekLast().changeState();
+            logger.info(carsLoaded.peekLast());
             countCarsOnFerry--;
             try {
                 TimeUnit.MILLISECONDS.sleep(300);
