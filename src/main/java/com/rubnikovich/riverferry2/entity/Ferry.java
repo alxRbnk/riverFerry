@@ -16,6 +16,7 @@ public class Ferry implements Runnable {
     public static final int LIMIT_WEIGHT = 12_000;
     private static volatile Ferry instance;
     public static Lock lock = new ReentrantLock();
+    public static int counter;
     private Deque<Car> carsOnFerry = new ArrayDeque<>();
     private Deque<Car> carsQueue = new ArrayDeque<>();
     private Deque<Car> carsLoaded = new ArrayDeque<>();
@@ -82,7 +83,7 @@ public class Ferry implements Runnable {
     @Override
     public void run() {
         try {
-            while (carsLoaded.size() != Car.getCounter()) {
+            while (carsLoaded.size() != counter) {
                 lock.lock();
                 try {
                     unloadFerry();

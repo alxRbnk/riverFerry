@@ -36,6 +36,6 @@ public class Main {
             logger.error(e);
             Thread.currentThread().interrupt();
         }
-        logger.info("onFerry=" + ferry.getCarOnFerry().size() + " \nloaded=" + ferry.getCarLoaded());
+        logger.info( " \nloaded=" + ferry.getCarLoaded());
     }
 }

@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Car implements Runnable {
     private static final Logger logger = LogManager.getLogger();
-    private static int counter;
     private int id;
     private int weight;
     private int area;
@@ -23,7 +22,8 @@ public class Car implements Runnable {
         this.weight = weight;
         this.area = area;
         this.carState = CarState.NEW;
-        counter++;
+        Ferry.counter++;
+        Thread.currentThread().setName(String.valueOf(this.getId()));
     }
 
     public void changeState() {
@@ -39,7 +39,6 @@ public class Car implements Runnable {
 
     @Override
     public void run() {
-        Thread.currentThread().setName(String.valueOf(this.getId()));
         while (this.carState != CarState.ON_FERRY) {
             Ferry.lock.lock();
             try {
@@ -50,7 +49,7 @@ public class Car implements Runnable {
                     Ferry.lock.unlock();
                 }
             } catch (InterruptedException e) {
-                logger.info(e);
+                logger.error(e);
                 Thread.currentThread().interrupt();
             }
         }
@@ -105,10 +104,6 @@ public class Car implements Runnable {
 
     public void setCarState(CarState carState) {
         this.carState = carState;
-    }
-
-    public static int getCounter() {
-        return counter;
     }
 
     @Override
